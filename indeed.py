@@ -5,7 +5,7 @@ LIMIT = 50
 URL = f"https://jp.indeed.com/%E6%B1%82%E4%BA%BA?as_and=python&as_phr=&as_any=&as_not=&as_ttl=&as_cmp=&jt=all&st=&salary=&radius=25&l=%E6%9D%B1%E4%BA%AC%E9%83%BD&fromage=any&limit={LIMIT}"
 
 
-def extract_indeed_pages():
+def get_last_page():
     result = requests.get(URL)
     soup = BeautifulSoup(
         result.text, 'html.parser')
@@ -22,11 +22,15 @@ def extract_indeed_pages():
 def extract_job(html):
     title = html.find("h2", {"class": "title"}).find("a")["title"]
     company = html.find("span", {"class": "company"})
-    company_anchor = company.find("a")
-    if company_anchor is not None:
-        company = (str(company.find("a").string))
+    if company:
+        company_anchor = company.find("a")
+        if company_anchor is not None:
+            company = (str(company.find("a").string))
+        else:
+            company = (str(company.string))
     else:
-        company = (str(company.string))
+        company = None
+
     company = company.strip()
     location = html.find("div", {"class": "recJobLoc"})["data-rc-loc"]
     job_id = html["data-jk"]
@@ -34,7 +38,7 @@ def extract_job(html):
            "link": f"https://jp.indeed.com/viewjob?jk={job_id}"}
 
 
-def extract_indeed_jobs(max_page):
+def extract_jobs(max_page):
     jobs = []
     for page in range(max_page):
         print(f"Scrapping page {page}")
@@ -44,4 +48,10 @@ def extract_indeed_jobs(max_page):
         for result in results:
             job = extract_job(result)
             jobs.append(job)
+    return jobs
+
+
+def get_jobs():
+    last_page = get_last_page()
+    jobs = extract_jobs(last_page)
     return jobs
